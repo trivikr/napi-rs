@@ -452,6 +452,36 @@ test('should set @emnapi/core and @emnapi/runtime versions to match emnapi for W
 })
 
 test.serial(
+  'should skip wasm runtime metadata lookup in dry-run mode',
+  async (t) => {
+    const { tmpDir, packageJsonPath } = t.context
+
+    process.env.npm_config_registry = 'http://127.0.0.1:9/'
+
+    const packageJson = {
+      name: 'test-wasm-dry-run',
+      version: '1.0.0',
+      napi: {
+        binaryName: 'test-wasm-dry-run',
+        targets: ['wasm32-wasi-preview1-threads'],
+      },
+    }
+
+    await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
+
+    await t.notThrowsAsync(() =>
+      createNpmDirs({
+        cwd: tmpDir,
+        packageJsonPath: 'package.json',
+        dryRun: true,
+      }),
+    )
+
+    t.false(existsSync(join(tmpDir, 'npm')))
+  },
+)
+
+test.serial(
   'should reject an empty latest dist-tag when resolving wasm runtime metadata',
   async (t) => {
     const { tmpDir, packageJsonPath } = t.context

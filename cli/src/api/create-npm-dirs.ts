@@ -107,9 +107,10 @@ export async function createNpmDirs(userOptions: CreateNpmDirsOptions) {
       packageJsonPath,
       options.configPath ? resolve(options.cwd, options.configPath) : undefined,
     )
-  const wasmRuntimeVersion = targets.some((target) => target.arch === 'wasm32')
-    ? await getLatestWasmRuntimeVersion()
-    : undefined
+  const wasmRuntimeVersion =
+    !options.dryRun && targets.some((target) => target.arch === 'wasm32')
+      ? await getLatestWasmRuntimeVersion()
+      : undefined
 
   for (const target of targets) {
     const targetDir = join(npmPath, `${target.platformArchABI}`)
@@ -165,7 +166,9 @@ export async function createNpmDirs(userOptions: CreateNpmDirsOptions) {
       }
       const emnapiVersion = require('emnapi/package.json').version
       scopedPackageJson.dependencies = {
-        '@napi-rs/wasm-runtime': `^${wasmRuntimeVersion}`,
+        ...(wasmRuntimeVersion
+          ? { '@napi-rs/wasm-runtime': `^${wasmRuntimeVersion}` }
+          : {}),
         '@emnapi/core': emnapiVersion,
         '@emnapi/runtime': emnapiVersion,
       }
